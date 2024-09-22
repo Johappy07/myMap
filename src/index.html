@@ -1,28 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Locate Button, Weather Info, and Basemap Gallery</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.30/esri/themes/light/main.css" />
+    <style>
+      html, body, #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      #basemapToggle {
+        position: absolute;
+        top: 10px;
+        left: 50px;
+        z-index: 10;
+      }
+    </style>
+    <script src="https://js.arcgis.com/4.30/"></script>
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/widgets/Locate",
+        "esri/layers/ImageryLayer",
+        "esri/widgets/BasemapGallery",
+        "esri/widgets/Expand",
+        "esri/widgets/LayerList",
+        "esri/Graphic",
+        "esri/geometry/Point",
+        "esri/symbols/SimpleMarkerSymbol"
+      ], function(Map, MapView, Locate, ImageryLayer, BasemapGallery, Expand, LayerList, Graphic, Point, SimpleMarkerSymbol) {
 
-<head>
-  <meta charset="utf-8" />
-  <title>Ionic App</title>
+        const map = new Map({
+          basemap: "topo-vector" // Default basemap
+        });
 
-  <base href="/" />
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [-95, 39], // Center the map over the US
+          zoom: 4
+        });
 
-  <meta name="color-scheme" content="light dark" />
-  <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="format-detection" content="telephone=no" />
-  <meta name="msapplication-tap-highlight" content="no" />
+        // Adding the Locate button
+        const locateBtn = new Locate({
+          view: view
+        });
+        view.ui.add(locateBtn, "top-left");
 
-  <link rel="icon" type="image/png" href="assets/icon/favicon.png" />
-  <link rel="stylesheet" href="https://js.arcgis.com/4.18/esri/esri/themes/main.css">
-  <script src="https://js.arcgis.com/4.18/"></script>
+        // Adding the weather layer (ImageryLayer)
+        const weatherLayer = new ImageryLayer({
+          url: 'https://mapservices.weather.noaa.gov/eventdriven/rest/services/radar/radar_base_reflectivity_time/ImageServer'
+        });
+        map.add(weatherLayer);
 
-  <!-- add to homescreen for ios -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-</head>
+        // Basemap Gallery
+        const basemapGallery = new BasemapGallery({
+          view: view
+        });
 
-<body>
-  <app-root></app-root>
-</body>
+        const bgExpand = new Expand({
+          view: view,
+          content: basemapGallery
+        });
+        view.ui.add(bgExpand, "top-right");
 
+        // Layer List (optional addition to view layers in the map)
+        const layerList = new LayerList({
+          view: view
+        });
+
+        const llExpand = new Expand({
+          view: view,
+          content: layerList
+        });
+        view.ui.add(llExpand, "top-left");
+
+        // Define new point locations (New Bedford, London, Wichita)
+        const points = [
+          { longitude: -70.9264, latitude: 41.6362, name: "New Bedford" },  // New Bedford, MA, USA
+          { longitude: -97.1384, latitude: 49.8951, name: "Winnipeg" },          // Winnipeg, USA
+          { longitude: -97.3301, latitude: 37.6872, name: "Wichita" }        // Wichita, KS, USA
+        ];
+
+        // Create a marker symbol
+        const markerSymbol = new SimpleMarkerSymbol({
+          color: "red",
+          size: "12px",
+          outline: {
+            color: "white",
+            width: 1
+          }
+        });
+
+        // Loop through each point and create a graphic for it
+        points.forEach(point => {
+          const pointGeometry = new Point({
+            longitude: point.longitude,
+            latitude: point.latitude
+          });
+
+          const pointGraphic = new Graphic({
+            geometry: pointGeometry,
+            symbol: markerSymbol,
+            attributes: {
+              name: point.name
+            },
+            popupTemplate: {
+              title: "{name}",
+              content: "Location: {longitude}, {latitude}"
+            }
+          });
+
+          view.graphics.add(pointGraphic);
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+  </body>
 </html>
